@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attaque par Inférence - TP Cybersécurité</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- En-tête -->
+        <header class="header">
+            <h1>🔍 Attaque par Inférence</h1>
+            <p class="subtitle">Extraction d'informations via analyse des réponses</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav">
+            <a href="index.html">🏠 Accueil</a>
+            <a href="sql-injection.html">💉 SQL Injection</a>
+            <a href="xss-reflected.html">🔄 XSS Réfléchi</a>
+            <a href="xss-stored.html">💾 XSS Stocké</a>
+            <a href="xss-dom.html">🌐 XSS DOM</a>
+            <a href="ddos.html">📊 DDoS</a>
+            <a href="inference.html" class="active">🔍 Inférence</a>
+        </nav>
+
+        <!-- Contenu principal -->
+        <section class="content-section">
+            <h2>Qu'est-ce qu'une attaque par inférence ?</h2>
+            <div class="explanation">
+                <p><strong>L'attaque par inférence</strong> consiste à extraire des informations sensibles en analysant
+                    les différences subtiles dans les réponses du système, même lorsque l'accès direct aux données est
+                    bloqué. L'attaquant déduit des informations à partir de ce que le système révèle indirectement.</p>
+                <h3>🎯 Principes de base :</h3>
+                <ul>
+                    <li><strong>Analyse des réponses</strong> : Messages d'erreur, temps de réponse, codes HTTP</li>
+                    <li><strong>Énumération</strong> : Tester systématiquement différentes valeurs</li>
+                    <li><strong>Corrélation</strong> : Combiner plusieurs fuites d'information</li>
+                    <li><strong>Side-channel</strong> : Exploiter des canaux auxiliaires (timing, comportement)</li>
+                </ul>
+                <h3>💡 Exemple simple :</h3>
+                <div class="code-block">
+                    # Connexion avec mauvais identifiants
+                    Username: inconnu@email.com
+                    → "Cet email n'existe pas" ❌ Fuite d'information !
+
+                    Username: admin@entreprise.com
+                    → "Mot de passe incorrect" ✓ L'email existe !
+
+                    # L'attaquant vient d'énumérer un compte valide
+                    # Prochaine étape : brute force du mot de passe
+                </div>
+            </div>
+
+            <!-- Démonstration interactive -->
+            <div class="demo-container">
+                <!-- VERSION VULNÉRABLE -->
+                <div class="vulnerable-section">
+                    <h3 class="section-title">🔓 Système Vulnérable</h3>
+                    <p><strong>Testez ces emails :</strong></p>
+                    <div class="code-block" style="font-size: 0.85rem;">
+                        admin@example.com (existe)
+                        user@example.com (existe)
+                        test@example.com (n'existe pas)
+                    </div>
+
+                    <form id="vulnerableLoginForm">
+                        <div class="form-group">
+                            <label for="vuln-email">Email :</label>
+                            <input type="email" id="vuln-email" placeholder="test@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="vuln-password">Mot de passe :</label>
+                            <input type="password" id="vuln-password" placeholder="password123">
+                        </div>
+                        <button type="submit" class="btn">Se connecter</button>
+                    </form>
+
+                    <div id="vulnerableResult"></div>
+                    <div id="vulnerableInference" style="margin-top: 15px;"></div>
+
+                    <div class="explanation" style="margin-top: 20px; background: white;">
+                        <h4>⚠️ Fuites d'information :</h4>
+                        <div class="code-block">
+                            // ❌ Messages d'erreur trop précis
+                            if (!userExists(email)) {
+                            return "Cet email n'existe pas";
+                            }
+                            if (!passwordMatch(password)) {
+                            return "Mot de passe incorrect";
+                            }
+
+                            // L'attaquant peut énumérer les comptes !
+                        </div>
+                        <ul>
+                            <li>❌ Messages d'erreur différenciés</li>
+                            <li>❌ Temps de réponse différent</li>
+                            <li>❌ Codes HTTP spécifiques</li>
+                            <li>❌ Permet énumération d'utilisateurs</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- VERSION SÉCURISÉE -->
+                <div class="secure-section">
+                    <h3 class="section-title">✅ Système Sécurisé</h3>
+                    <p><strong>Même erreur pour tous les cas :</strong></p>
+
+                    <form id="secureLoginForm">
+                        <div class="form-group">
+                            <label for="secure-email">Email :</label>
+                            <input type="email" id="secure-email" placeholder="admin@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="secure-password">Mot de passe :</label>
+                            <input type="password" id="secure-password" placeholder="admin123">
+                        </div>
+                        <button type="submit" class="btn">Se connecter</button>
+                    </form>
+
+                    <div id="secureResult"></div>
+
+                    <div class="explanation" style="margin-top: 20px; background: white;">
+                        <h4>✅ Protections implémentées :</h4>
+                        <div class="code-block">
+                            // ✅ Message générique
+                            if (!authenticate(email, password)) {
+                            // Délai artificiel constant
+                            await sleep(randomBetween(200, 300));
+                            return "Identifiants incorrects";
+                            }
+
+                            // Impossible de différencier les cas
+                            // Temps de réponse constant
+                        </div>
+                        <ul>
+                            <li>✅ Message d'erreur générique identique</li>
+                            <li>✅ Temps de réponse constant (timing constant)</li>
+                            <li>✅ Même code HTTP pour tous les échecs</li>
+                            <li>✅ Rate limiting pour limiter énumération</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Types d'attaques par inférence -->
+            <div class="explanation">
+                <h3>⚔️ Types d'attaques par inférence :</h3>
+
+                <h4>1. Énumération d'utilisateurs</h4>
+                <p>Découvrir quels comptes/emails existent dans le système.</p>
+                <div class="code-block">
+                    # Récupération de mot de passe
+                    Email: inconnu@test.com → "Email non trouvé"
+                    Email: admin@site.com → "Email de récupération envoyé"
+                    ✓ L'attaquant sait que admin@site.com existe
+
+                    # Inscription
+                    Email: user@site.com → "Cet email est déjà utilisé"
+                    ✓ Énumération de la base d'utilisateurs
+                </div>
+
+                <h4>2. Timing Attacks (Attaques temporelles)</h4>
+                <p>Exploitation des différences de temps de traitement.</p>
+                <div class="code-block">
+                    # Comparaison de mot de passe caractère par caractère
+                    Password: a*** → 10ms (échec immédiat)
+                    Password: p*** → 50ms (1er caractère ok !)
+                    Password: pa** → 90ms (2 caractères ok !)
+                    Password: pas* → 130ms (3 caractères ok !)
+
+                    # L'attaquant reconstruit le mot de passe
+                    # en mesurant le temps de réponse
+                </div>
+
+                <h4>3. Error-based Inference</h4>
+                <p>Extraction d'informations via messages d'erreur.</p>
+                <div class="code-block">
+                    # Upload de fichier
+                    File: document.pdf → "Fichier uploadé avec succès"
+                    File: malware.exe → "Extension .exe non autorisée"
+                    ✓ L'attaquant connaît les extensions bloquées
+
+                    # Accès fichier
+                    GET /files/1 → 200 OK
+                    GET /files/2 → 404 Not Found
+                    GET /files/3 → 403 Forbidden (existe mais accès refusé !)
+                    ✓ Énumération des IDs de fichiers existants
+                </div>
+
+                <h4>4. Boolean-based Blind Inference</h4>
+                <p>Déduction d'informations par questions Vrai/Faux.</p>
+                <div class="code-block">
+                    # Exemple : Blind SQL Injection
+                    ' AND (SELECT LENGTH(password) FROM users WHERE id=1) > 5 --
+                    → Comportement A (Vrai)
+                    ' AND (SELECT LENGTH(password) FROM users WHERE id=1) > 10 --
+                    → Comportement B (Faux)
+                    ✓ Le mot de passe fait entre 6 et 10 caractères
+
+                    # L'attaquant extrait les données bit par bit
+                </div>
+            </div>
+
+            <!-- Cas d'usage réels -->
+            <div class="explanation">
+                <h3>💼 Cas d'usage réels d'inférence :</h3>
+
+                <h4>1. Vérification d'existence de comptes</h4>
+                <ul>
+                    <li><strong>Formulaires d'inscription</strong> : "Email déjà utilisé"</li>
+                    <li><strong>Récupération de mot de passe</strong> : "Email non trouvé" vs "Email envoyé"</li>
+                    <li><strong>Réseaux sociaux</strong> : Suggestions d'amis révélant des connexions</li>
+                </ul>
+
+                <h4>2. Information Leakage via API</h4>
+                <div class="code-block">
+                    # API REST mal sécurisée
+                    GET /api/users/123 → 200 OK + données
+                    GET /api/users/124 → 404 Not Found
+                    GET /api/users/125 → 403 Forbidden
+                    ✓ L'utilisateur 125 existe mais l'accès est refusé
+                </div>
+
+                <h4>3. Session et Authentification</h4>
+                <div class="code-block">
+                    # Cookie de session prédictible
+                    SessionID: user_123_20260131
+                    ✓ L'attaquant devine les IDs de session
+
+                    # Tokens JWT mal configurés
+                    eyJ0eXAiOiJKV1QiLCJhbGci...
+                    ✓ Payload décodable (base64) révèle rôle, email, etc.
+                </div>
+
+                <h4>4. Recherche et filtres</h4>
+                <div class="code-block">
+                    # Moteur de recherche interne
+                    Recherche: "salaire" → 45 résultats
+                    Recherche: "salaire 50000" → 12 résultats
+                    Recherche: "salaire Jean Dupont" → 1 résultat
+                    ✓ Inférence du salaire d'un employé spécifique
+                </div>
+            </div>
+
+            <!-- Cas spécial : Timing Attack détaillé -->
+            <div class="explanation">
+                <h3>⏱️ Timing Attacks (Analyse approfondie) :</h3>
+
+                <h4>Exemple : Comparaison de strings non sécurisée</h4>
+                <div class="code-block">
+                    // ❌ Code vulnérable (early return)
+                    function comparePassword(input, correct) {
+                    if (input.length !== correct.length)
+                    return false;
+
+                    for (let i = 0; i < input.length; i++) { if (input[i] !==correct[i]) return false; // ❌ Sort dès le
+                        1er caractère incorrect } return true; } // Temps de réponse révèle la position du caractère
+                        incorrect ! </div>
+
+                        <h4>Solution : Comparaison à temps constant</h4>
+                        <div class="code-block">
+                            // ✅ Code sécurisé (constant-time comparison)
+                            function secureCompare(input, correct) {
+                            if (input.length !== correct.length)
+                            return false;
+
+                            let diff = 0;
+                            for (let i = 0; i < input.length; i++) { diff |=input.charCodeAt(i) ^ correct.charCodeAt(i);
+                                } // Délai artificiel aléatoire await sleep(randomBetween(100, 200)); return diff===0; }
+                                </div>
+                        </div>
+
+                        <!-- Défenses -->
+                        <div class="explanation">
+                            <h3>🛡️ Défenses contre les attaques par inférence :</h3>
+
+                            <h4>1. Messages d'erreur génériques</h4>
+                            <ul>
+                                <li>✅ Même message pour tous les échecs d'authentification</li>
+                                <li>✅ "Identifiants incorrects" au lieu de "Email inconnu"</li>
+                                <li>✅ Codes HTTP cohérents (toujours 401 pour auth failed)</li>
+                            </ul>
+
+                            <h4>2. Timing constant</h4>
+                            <ul>
+                                <li>✅ <strong>Constant-time comparison</strong> pour mots de passe/tokens</li>
+                                <li>✅ <strong>Délais artificiels</strong> : sleep(random(100, 200))</li>
+                                <li>✅ <strong>Crypto timing-safe</strong> : crypto.timingSafeEqual() (Node.js)</li>
+                            </ul>
+
+                            <h4>3. Rate Limiting et CAPTCHA</h4>
+                            <ul>
+                                <li>✅ Limitation du nombre de tentatives (5/minute)</li>
+                                <li>✅ Augmentation progressive du délai (exponential backoff)</li>
+                                <li>✅ CAPTCHA après N échecs</li>
+                                <li>✅ Blocage temporaire d'IP</li>
+                            </ul>
+
+                            <h4>4. Réponses uniformes</h4>
+                            <ul>
+                                <li>✅ Toujours renvoyer 200 OK (avec message d'erreur dans body)</li>
+                                <li>✅ Même format JSON pour succès et échec</li>
+                                <li>✅ Padding de réponses (taille identique)</li>
+                            </ul>
+
+                            <h4>5. Obfuscation d'IDs</h4>
+                            <ul>
+                                <li>✅ UUIDs au lieu d'IDs séquentiels (1, 2, 3...)</li>
+                                <li>✅ Hashage d'IDs publics</li>
+                                <li>✅ Tokens aléatoires pour ressources sensibles</li>
+                            </ul>
+
+                            <h4>6. Validation d'accès stricte</h4>
+                            <ul>
+                                <li>✅ Même erreur pour "n'existe pas" et "accès refusé"</li>
+                                <li>✅ Vérifier les permissions AVANT de révéler l'existence</li>
+                                <li>✅ Filtrer les données sensibles des réponses API</li>
+                            </ul>
+                        </div>
+
+                        <!-- Checklist -->
+                        <div class="explanation">
+                            <h3>✅ Checklist anti-inférence :</h3>
+                            <ul>
+                                <li>☑️ Messages d'erreur génériques et identiques</li>
+                                <li>☑️ Comparaisons à temps constant (mots de passe, tokens)</li>
+                                <li>☑️ Rate limiting sur toutes les endpoints sensibles</li>
+                                <li>☑️ Délais de réponse constants ou aléatoires</li>
+                                <li>☑️ Codes HTTP cohérents (pas de 404 vs 403)</li>
+                                <li>☑️ UUIDs au lieu d'IDs séquentiels</li>
+                                <li>☑️ Journalisation des tentatives répétées</li>
+                                <li>☑️ CAPTCHA après plusieurs échecs</li>
+                                <li>☑️ Pas de révélation d'existence via recherche/API</li>
+                                <li>☑️ Audit régulier des fuites d'information potentielles</li>
+                            </ul>
+                        </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>💡 TP Cybersécurité - Attaque par Inférence</p>
+        </footer>
+    </div>
+
+    <script>
+        // ==================== BASE DE DONNÉES SIMULÉE ====================
+        const validUsers = [
+            { email: 'admin@example.com', password: 'admin123', name: 'Admin' },
+            { email: 'user@example.com', password: 'user123', name: 'User' },
+            { email: 'john@example.com', password: 'john456', name: 'John' }
+        ];
+
+        // ==================== VERSION VULNÉRABLE ====================
+        document.getElementById('vulnerableLoginForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const email = document.getElementById('vuln-email').value;
+            const password = document.getElementById('vuln-password').value;
+            const resultDiv = document.getElementById('vulnerableResult');
+            const inferenceDiv = document.getElementById('vulnerableInference');
+
+            const startTime = Date.now();
+
+            // ⚠️ VULNÉRABLE : Messages différenciés
+            const user = validUsers.find(u => u.email === email);
+
+            const endTime = Date.now();
+            const responseTime = endTime - startTime;
+
+            if (!user) {
+                resultDiv.innerHTML = `
+                    <div class="message message-error">
+                        ❌ <strong>Cet email n'existe pas dans notre système</strong>
+                    </div>
+                `;
+
+                inferenceDiv.innerHTML = `
+                    <div class="message message-warning">
+                        🔍 <strong>FUITE D'INFORMATION DÉTECTÉE !</strong><br>
+                        L'attaquant apprend que cet email n'existe PAS.<br>
+                        → Il peut énumérer tous les comptes valides !<br>
+                        <small>Temps de réponse: ${responseTime}ms</small>
+                    </div>
+                `;
+            } else if (user.password !== password) {
+                // Simulation d'un délai de vérification
+                setTimeout(() => {
+                    const endTime2 = Date.now();
+                    const responseTime2 = endTime2 - startTime;
+
+                    resultDiv.innerHTML = `
+                        <div class="message message-error">
+                            ❌ <strong>Mot de passe incorrect</strong>
+                        </div>
+                    `;
+
+                    inferenceDiv.innerHTML = `
+                        <div class="message message-error">
+                            🚨 <strong>INFÉRENCE RÉUSSIE !</strong><br>
+                            ✓ L'attaquant sait que l'email <strong>${email}</strong> existe !<br>
+                            ✓ Il peut maintenant faire du brute-force sur le mot de passe<br>
+                            ✓ Temps de réponse différent: ${responseTime2}ms (vs ${responseTime}ms si email inexistant)<br>
+                            → Attaque par timing également possible !
+                        </div>
+                    `;
+                }, 50);
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="message message-success">
+                        ✅ <strong>Connexion réussie !</strong><br>
+                        Bienvenue ${user.name}
+                    </div>
+                `;
+                inferenceDiv.innerHTML = '';
+            }
+        });
+
+        // ==================== VERSION SÉCURISÉE ====================
+        document.getElementById('secureLoginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const email = document.getElementById('secure-email').value;
+            const password = document.getElementById('secure-password').value;
+            const resultDiv = document.getElementById('secureResult');
+
+            // ✅ Délai artificiel constant (simulation)
+            const startTime = Date.now();
+            await sleep(150 + Math.random() * 50); // 150-200ms
+
+            // ✅ Vérification sécurisée
+            const user = validUsers.find(u => u.email === email && u.password === password);
+
+            const endTime = Date.now();
+            const responseTime = endTime - startTime;
+
+            if (!user) {
+                // ✅ Message générique identique dans tous les cas
+                resultDiv.innerHTML = `
+                    <div class="message message-error">
+                        ❌ <strong>Identifiants incorrects</strong><br>
+                        Veuillez vérifier votre email et mot de passe.<br>
+                        <small style="color: #16a34a;">🛡️ Temps de réponse constant: ~${responseTime}ms</small>
+                    </div>
+                `;
+
+                setTimeout(() => {
+                    resultDiv.innerHTML += `
+                        <div class="message message-info" style="margin-top: 10px;">
+                            ℹ️ <strong>Protection active :</strong><br>
+                            • Message générique (impossible de savoir si email existe)<br>
+                            • Temps de réponse constant (~200ms toujours)<br>
+                            • Rate limiting actif (max 5 tentatives/minute)<br>
+                            • Pas de différence comportementale détectable
+                        </div>
+                    `;
+                }, 100);
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="message message-success">
+                        ✅ <strong>Connexion sécurisée réussie !</strong><br>
+                        Bienvenue ${user.name}<br>
+                        <small>💡 Essayez : admin@example.com / admin123</small>
+                    </div>
+                `;
+            }
+        });
+
+        // ==================== FONCTIONS UTILITAIRES ====================
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+
+</html>

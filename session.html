@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion de session - TP Cybersécurité</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- En-tête -->
+        <header class="header">
+            <h1>🍪 Gestion de session</h1>
+            <p class="subtitle">Sécurisation des sessions utilisateur</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav">
+            <a href="index.html">🏠 Accueil</a>
+            <a href="sql-injection.html">💉 SQL Injection</a>
+            <a href="xss.html">📜 XSS</a>
+            <a href="password.html">🔑 Mots de passe</a>
+            <a href="session.html" class="active">🍪 Sessions</a>
+        </nav>
+
+        <!-- Contenu principal -->
+        <section class="content-section">
+            <h2>Qu'est-ce qu'une session utilisateur ?</h2>
+            <div class="explanation">
+                <p>Une <strong>session</strong> permet de maintenir l'état de connexion d'un utilisateur entre
+                    différentes requêtes HTTP. Les sessions mal configurées sont une source majeure de vulnérabilités.
+                </p>
+                <h3>🎯 Risques d'une gestion de session faible :</h3>
+                <ul>
+                    <li><strong>Session Hijacking :</strong> Vol de session via interception de cookies</li>
+                    <li><strong>Session Fixation :</strong> Forcer un utilisateur à utiliser un ID de session connu</li>
+                    <li><strong>Sessions non expirées :</strong> Sessions qui restent actives indéfiniment</li>
+                    <li><strong>Prédiction d'ID de session :</strong> ID de session facilement devinables</li>
+                    <li><strong>CSRF (Cross-Site Request Forgery) :</strong> Exploitation de sessions actives</li>
+                </ul>
+                <h3>💡 Mécanisme de session typique :</h3>
+                <div class="code-block">
+                    1. Utilisateur se connecte
+                    2. Serveur crée une session avec ID unique
+                    3. ID de session stocké dans un cookie
+                    4. Cookie envoyé à chaque requête
+                    5. Serveur valide la session
+                </div>
+            </div>
+
+            <!-- Démonstration côte à côte -->
+            <div class="demo-container">
+                <!-- VERSION VULNÉRABLE -->
+                <div class="vulnerable-section">
+                    <h3 class="section-title">🔓 Session Vulnérable</h3>
+                    <p><strong>Problèmes :</strong> Session sans expiration, ID prévisible</p>
+
+                    <div class="form-group">
+                        <label for="vuln-username">Nom d'utilisateur :</label>
+                        <input type="text" id="vuln-username" placeholder="admin" value="admin">
+                    </div>
+                    <button onclick="loginVulnerable()" class="btn">Se connecter (vulnérable)</button>
+                    <button onclick="logoutVulnerable()" class="btn btn-secondary">Se déconnecter</button>
+
+                    <div id="vulnerableSessionStatus"></div>
+
+                    <div id="vulnerableSessionInfo" style="margin-top: 20px;"></div>
+
+                    <div class="explanation" style="margin-top: 20px; background: white;">
+                        <h4>⚠️ Problèmes de sécurité :</h4>
+                        <div class="code-block">
+                            // ❌ Code vulnérable
+                            sessionId = Math.floor(Math.random() * 10000);
+                            // ID simple et prévisible !
+
+                            cookie = "sessionId=" + sessionId;
+                            // Pas de flags HttpOnly, Secure, SameSite
+
+                            // Pas d'expiration de session !
+                            // Session reste active indéfiniment
+                        </div>
+                        <ul>
+                            <li>⚠️ ID de session prévisible (1-10000)</li>
+                            <li>⚠️ Aucune expiration de session</li>
+                            <li>⚠️ Cookie non sécurisé (pas HttpOnly)</li>
+                            <li>⚠️ Pas de régénération d'ID après login</li>
+                            <li>⚠️ Pas de validation côté serveur</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- VERSION SÉCURISÉE -->
+                <div class="secure-section">
+                    <h3 class="section-title">✅ Session Sécurisée</h3>
+                    <p><strong>Protections :</strong> Expiration, ID cryptographique, tokens</p>
+
+                    <div class="form-group">
+                        <label for="secure-username">Nom d'utilisateur :</label>
+                        <input type="text" id="secure-username" placeholder="admin" value="admin">
+                    </div>
+                    <button onclick="loginSecure()" class="btn">Se connecter (sécurisé)</button>
+                    <button onclick="logoutSecure()" class="btn btn-secondary">Se déconnecter</button>
+                    <button onclick="renewSession()" class="btn btn-secondary">Renouveler session</button>
+
+                    <div id="secureSessionStatus"></div>
+
+                    <div id="secureSessionInfo" style="margin-top: 20px;"></div>
+
+                    <div id="sessionTimer" style="margin-top: 15px; font-weight: bold; color: var(--primary);"></div>
+
+                    <div class="explanation" style="margin-top: 20px; background: white;">
+                        <h4>✅ Sécurité implémentée :</h4>
+                        <div class="code-block">
+                            // ✅ Code sécurisé
+                            sessionId = crypto.randomUUID();
+                            // ID unique et imprévisible
+
+                            cookie = {
+                            name: 'sessionId',
+                            value: sessionId,
+                            httpOnly: true, // Pas accessible en JS
+                            secure: true, // HTTPS uniquement
+                            sameSite: 'strict', // Protection CSRF
+                            maxAge: 1800 // Expire en 30 min
+                            }
+
+                            // Régénération après login
+                            // Validation côté serveur
+                            // Expiration automatique
+                        </div>
+                        <ul>
+                            <li>✅ ID de session cryptographiquement sécurisé (UUID)</li>
+                            <li>✅ Expiration automatique (30 minutes)</li>
+                            <li>✅ Cookie HttpOnly (protection XSS)</li>
+                            <li>✅ Cookie Secure (HTTPS uniquement)</li>
+                            <li>✅ SameSite strict (protection CSRF)</li>
+                            <li>✅ Régénération d'ID après login</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attaques courantes -->
+            <div class="explanation">
+                <h3>⚔️ Attaques courantes sur les sessions :</h3>
+                <h4>1. Session Hijacking (Vol de session)</h4>
+                <p>L'attaquant vole l'ID de session via XSS, reniflage réseau (sniffing), ou malware.</p>
+                <p><strong>Protection :</strong> Cookies HttpOnly, HTTPS, IP binding, détection d'anomalies.</p>
+
+                <h4>2. Session Fixation</h4>
+                <p>L'attaquant fixe un ID de session connu avant que la victime se connecte.</p>
+                <p><strong>Protection :</strong> Régénérer l'ID de session après authentification réussie.</p>
+
+                <h4>3. CSRF (Cross-Site Request Forgery)</h4>
+                <p>Exploitation d'une session active pour effectuer des actions non autorisées.</p>
+                <p><strong>Protection :</strong> Tokens CSRF, SameSite cookies, vérification du Referer.</p>
+
+                <h4>4. Sessions non expirées</h4>
+                <p>Les sessions restent actives indéfiniment, augmentant le risque d'exploitation.</p>
+                <p><strong>Protection :</strong> Timeout d'inactivité, expiration absolue, déconnexion automatique.</p>
+            </div>
+
+            <!-- Bonnes pratiques -->
+            <div class="explanation">
+                <h3>🛡️ Bonnes pratiques pour la gestion de sessions :</h3>
+                <h4>Génération de sessions :</h4>
+                <ul>
+                    <li><strong>ID imprévisibles :</strong> Utiliser des générateurs cryptographiques (UUID,
+                        crypto.randomBytes)</li>
+                    <li><strong>Longueur suffisante :</strong> Minimum 128 bits d'entropie</li>
+                    <li><strong>Régénération :</strong> Nouveau ID après login et changements de privilèges</li>
+                </ul>
+                <h4>Stockage et transmission :</h4>
+                <ul>
+                    <li><strong>Cookies sécurisés :</strong> HttpOnly, Secure, SameSite=Strict</li>
+                    <li><strong>HTTPS obligatoire :</strong> Chiffrement de toutes les communications</li>
+                    <li><strong>Stockage côté serveur :</strong> Ne jamais stocker de données sensibles dans les cookies
+                    </li>
+                </ul>
+                <h4>Expiration et validation :</h4>
+                <ul>
+                    <li><strong>Timeout d'inactivité :</strong> 15-30 minutes sans activité</li>
+                    <li><strong>Expiration absolue :</strong> Maximum 24 heures (selon le contexte)</li>
+                    <li><strong>Validation :</strong> Vérifier l'IP, User-Agent (avec prudence)</li>
+                    <li><strong>Déconnexion explicite :</strong> Invalider complètement la session</li>
+                </ul>
+                <h4>Protection contre les attaques :</h4>
+                <ul>
+                    <li><strong>Tokens CSRF :</strong> Pour toutes les actions sensibles</li>
+                    <li><strong>Limitation de sessions :</strong> Maximum 1-3 sessions simultanées par utilisateur</li>
+                    <li><strong>Journalisation :</strong> Logger toutes les activités de session</li>
+                    <li><strong>Détection d'anomalies :</strong> Surveiller les changements suspects (IP, localisation)
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>💡 TP Cybersécurité - Gestion de session</p>
+        </footer>
+    </div>
+
+    <script>
+        // ==================== VARIABLES GLOBALES ====================
+        let vulnerableSession = null;
+        let secureSession = null;
+        let sessionInterval = null;
+
+        // ==================== VERSION VULNÉRABLE ====================
+        function loginVulnerable() {
+            const username = document.getElementById('vuln-username').value;
+
+            if (!username) {
+                alert('Veuillez entrer un nom d\'utilisateur');
+                return;
+            }
+
+            // ⚠️ ID de session simple et prévisible
+            const sessionId = Math.floor(Math.random() * 10000);
+
+            vulnerableSession = {
+                id: sessionId,
+                username: username,
+                loginTime: new Date(),
+                // ⚠️ Pas d'expiration !
+            };
+
+            updateVulnerableStatus();
+        }
+
+        function logoutVulnerable() {
+            vulnerableSession = null;
+            updateVulnerableStatus();
+        }
+
+        function updateVulnerableStatus() {
+            const statusDiv = document.getElementById('vulnerableSessionStatus');
+            const infoDiv = document.getElementById('vulnerableSessionInfo');
+
+            if (vulnerableSession) {
+                statusDiv.innerHTML = `
+                    <div class="session-status session-active">
+                        ✅ SESSION ACTIVE<br>
+                        Utilisateur : ${vulnerableSession.username}
+                    </div>
+                `;
+
+                infoDiv.innerHTML = `
+                    <div class="message message-warning">
+                        <strong>⚠️ Informations de session vulnérable :</strong><br>
+                        <strong>ID de session :</strong> ${vulnerableSession.id} (facilement devinable !)<br>
+                        <strong>Connecté depuis :</strong> ${vulnerableSession.loginTime.toLocaleTimeString()}<br>
+                        <strong>Expiration :</strong> JAMAIS (session permanente !) ⚠️<br>
+                        <strong>Cookie sécurisé :</strong> NON ❌<br>
+                        <strong>Protection CSRF :</strong> NON ❌
+                    </div>
+                `;
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="session-status session-expired">
+                        ❌ AUCUNE SESSION ACTIVE
+                    </div>
+                `;
+                infoDiv.innerHTML = '';
+            }
+        }
+
+        // ==================== VERSION SÉCURISÉE ====================
+        function loginSecure() {
+            const username = document.getElementById('secure-username').value;
+
+            if (!username) {
+                alert('Veuillez entrer un nom d\'utilisateur');
+                return;
+            }
+
+            // ✅ ID de session cryptographiquement sécurisé
+            const sessionId = generateSecureSessionId();
+            const csrfToken = generateSecureSessionId();
+
+            secureSession = {
+                id: sessionId,
+                username: username,
+                loginTime: new Date(),
+                expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes
+                lastActivity: new Date(),
+                csrfToken: csrfToken,
+                ipAddress: 'Simulé : 192.168.1.1',
+                userAgent: navigator.userAgent.substring(0, 50) + '...'
+            };
+
+            startSessionTimer();
+            updateSecureStatus();
+        }
+
+        function logoutSecure() {
+            secureSession = null;
+            stopSessionTimer();
+            updateSecureStatus();
+        }
+
+        function renewSession() {
+            if (!secureSession) {
+                alert('Aucune session active à renouveler');
+                return;
+            }
+
+            // ✅ Régénération de l'ID de session
+            const newSessionId = generateSecureSessionId();
+            const newCsrfToken = generateSecureSessionId();
+
+            secureSession.id = newSessionId;
+            secureSession.csrfToken = newCsrfToken;
+            secureSession.expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+            secureSession.lastActivity = new Date();
+
+            updateSecureStatus();
+
+            const infoDiv = document.getElementById('secureSessionInfo');
+            const renewalMsg = document.createElement('div');
+            renewalMsg.className = 'message message-success';
+            renewalMsg.innerHTML = '✅ <strong>Session renouvelée !</strong> Nouveau ID et token CSRF générés.';
+            renewalMsg.style.marginTop = '10px';
+            infoDiv.appendChild(renewalMsg);
+
+            setTimeout(() => renewalMsg.remove(), 3000);
+        }
+
+        function generateSecureSessionId() {
+            // Simulation d'un UUID v4
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        function startSessionTimer() {
+            stopSessionTimer(); // Arrêter l'ancien timer s'il existe
+
+            sessionInterval = setInterval(() => {
+                if (!secureSession) {
+                    stopSessionTimer();
+                    return;
+                }
+
+                const now = new Date();
+                const timeLeft = secureSession.expiresAt - now;
+
+                if (timeLeft <= 0) {
+                    // Session expirée
+                    secureSession = null;
+                    stopSessionTimer();
+                    updateSecureStatus();
+
+                    alert('⏱️ Session expirée pour des raisons de sécurité. Veuillez vous reconnecter.');
+                } else {
+                    // Afficher le temps restant
+                    const minutes = Math.floor(timeLeft / 60000);
+                    const seconds = Math.floor((timeLeft % 60000) / 1000);
+
+                    const timerDiv = document.getElementById('sessionTimer');
+                    timerDiv.textContent = `⏱️ Session expire dans : ${minutes}m ${seconds}s`;
+
+                    // Avertissement à 5 minutes
+                    if (timeLeft <= 5 * 60 * 1000 && timeLeft > (5 * 60 * 1000 - 1000)) {
+                        alert('⚠️ Votre session expire dans 5 minutes. Renouvelez-la pour continuer.');
+                    }
+                }
+            }, 1000);
+        }
+
+        function stopSessionTimer() {
+            if (sessionInterval) {
+                clearInterval(sessionInterval);
+                sessionInterval = null;
+            }
+            document.getElementById('sessionTimer').textContent = '';
+        }
+
+        function updateSecureStatus() {
+            const statusDiv = document.getElementById('secureSessionStatus');
+            const infoDiv = document.getElementById('secureSessionInfo');
+
+            if (secureSession) {
+                const timeLeft = secureSession.expiresAt - new Date();
+                const minutesLeft = Math.floor(timeLeft / 60000);
+
+                statusDiv.innerHTML = `
+                    <div class="session-status session-active">
+                        ✅ SESSION ACTIVE ET SÉCURISÉE<br>
+                        Utilisateur : ${secureSession.username}
+                    </div>
+                `;
+
+                infoDiv.innerHTML = `
+                    <div class="message message-success">
+                        <strong>✅ Session sécurisée active :</strong><br>
+                        <strong>ID de session :</strong> ${secureSession.id.substring(0, 20)}... (UUID sécurisé) 🔒<br>
+                        <strong>Token CSRF :</strong> ${secureSession.csrfToken.substring(0, 20)}... 🛡️<br>
+                        <strong>Connecté depuis :</strong> ${secureSession.loginTime.toLocaleTimeString()}<br>
+                        <strong>Expiration :</strong> ${secureSession.expiresAt.toLocaleTimeString()} (~${minutesLeft} min)<br>
+                        <strong>Dernière activité :</strong> ${secureSession.lastActivity.toLocaleTimeString()}<br>
+                        <strong>Adresse IP :</strong> ${secureSession.ipAddress}<br>
+                        <strong>Cookie flags :</strong> HttpOnly ✅ | Secure ✅ | SameSite=Strict ✅<br>
+                        <strong>Protection CSRF :</strong> OUI ✅
+                    </div>
+                `;
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="session-status session-expired">
+                        ❌ SESSION EXPIRÉE OU INEXISTANTE<br>
+                        Veuillez vous connecter
+                    </div>
+                `;
+                infoDiv.innerHTML = '';
+            }
+        }
+
+        // Initialisation
+        updateVulnerableStatus();
+        updateSecureStatus();
+    </script>
+</body>
+
+</html>

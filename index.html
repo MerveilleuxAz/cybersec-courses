@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TP Cybersécurité : Vulnérabilités Web</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- En-tête -->
+        <header class="header">
+            <h1>🔒 TP Cybersécurité</h1>
+            <p class="subtitle">Failles Web et Contre-mesures</p>
+        </header>
+
+        <!-- Introduction -->
+        <section class="intro">
+            <h2>Objectif du TP</h2>
+            <p>Ce site pédagogique vous permet de découvrir les vulnérabilités web critiques et d'apprendre comment les prévenir. Chaque section présente :</p>
+            <ul>
+                <li>✅ Une démonstration <strong>vulnérable</strong> interactive</li>
+                <li>✅ Une explication détaillée des risques</li>
+                <li>✅ Une version <strong>sécurisée</strong> avec les bonnes pratiques</li>
+            </ul>
+            <div class="warning">
+                ⚠️ <strong>Important :</strong> Ce site est uniquement à but pédagogique. Ne jamais utiliser ces techniques sur des systèmes réels sans autorisation explicite.
+            </div>
+        </section>
+
+        <!-- Menu des vulnérabilités -->
+        <section class="vulnerabilities">
+            <h2>Explorez les vulnérabilités web</h2>
+            <div class="cards-grid">
+                <!-- Carte Injection SQL -->
+                <div class="card">
+                    <div class="card-icon">💉</div>
+                    <h3>Injection SQL</h3>
+                    <p>Manipulation de requêtes de base de données via des entrées malveillantes non validées</p>
+                    <a href="sql-injection.html" class="btn">Découvrir</a>
+                </div>
+
+                <!-- Carte XSS Réfléchi -->
+                <div class="card">
+                    <div class="card-icon">🔄</div>
+                    <h3>XSS Réfléchi</h3>
+                    <p>Script malveillant renvoyé immédiatement dans la réponse HTTP (URL, formulaire)</p>
+                    <a href="xss-reflected.html" class="btn">Découvrir</a>
+                </div>
+
+                <!-- Carte XSS Stocké -->
+                <div class="card">
+                    <div class="card-icon">💾</div>
+                    <h3>XSS Stocké</h3>
+                    <p>Script malveillant enregistré en base de données et affiché à tous les visiteurs</p>
+                    <a href="xss-stored.html" class="btn">Découvrir</a>
+                </div>
+
+                <!-- Carte XSS DOM -->
+                <div class="card">
+                    <div class="card-icon">🌐</div>
+                    <h3>XSS DOM-based</h3>
+                    <p>Vulnérabilité dans le code JavaScript côté client manipulant le DOM</p>
+                    <a href="xss-dom.html" class="btn">Découvrir</a>
+                </div>
+
+                <!-- Carte DDoS -->
+                <div class="card">
+                    <div class="card-icon">📊</div>
+                    <h3>Attaque DDoS</h3>
+                    <p>Déni de service distribué saturant les ressources du serveur</p>
+                    <a href="ddos.html" class="btn">Découvrir</a>
+                </div>
+
+                <!-- Carte Inférence -->
+                <div class="card">
+                    <div class="card-icon">🔍</div>
+                    <h3>Attaque par Inférence</h3>
+                    <p>Extraction d'informations sensibles via l'analyse des réponses du système</p>
+                    <a href="inference.html" class="btn">Découvrir</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Classification OWASP -->
+        <section class="intro" style="background: #f1f5f9; padding: 30px; margin: 30px; border-radius: 12px;">
+            <h2>📋 Classification OWASP Top 10</h2>
+            <p>Ces vulnérabilités font partie du <strong>OWASP Top 10</strong>, la liste des risques de sécurité les plus critiques pour les applications web :</p>
+            <ul>
+                <li><strong>A03:2021 - Injection</strong> → Injection SQL</li>
+                <li><strong>A03:2021 - Injection</strong> → XSS (Cross-Site Scripting)</li>
+                <li><strong>A05:2021 - Security Misconfiguration</strong> → Protection DDoS inadéquate</li>
+                <li><strong>A01:2021 - Broken Access Control</strong> → Attaques par inférence</li>
+            </ul>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>💡 Projet pédagogique - 2026 | Apprenez à sécuriser vos applications web</p>
+        </footer>
+    </div>
+</body>
+</html>

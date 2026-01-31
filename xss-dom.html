@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XSS DOM-based - TP Cybersécurité</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- En-tête -->
+        <header class="header">
+            <h1>🌐 XSS DOM-based</h1>
+            <p class="subtitle">Vulnérabilité dans le JavaScript côté client</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav">
+            <a href="index.html">🏠 Accueil</a>
+            <a href="sql-injection.html">💉 SQL Injection</a>
+            <a href="xss-reflected.html">🔄 XSS Réfléchi</a>
+            <a href="xss-stored.html">💾 XSS Stocké</a>
+            <a href="xss-dom.html" class="active">🌐 XSS DOM</a>
+            <a href="ddos.html">📊 DDoS</a>
+            <a href="inference.html">🔍 Inférence</a>
+        </nav>
+
+        <!-- Contenu principal -->
+        <section class="content-section">
+            <h2>Qu'est-ce que le XSS DOM-based ?</h2>
+            <div class="explanation">
+                <p><strong>Le XSS DOM-based</strong> est une vulnérabilité où le code malveillant est exécuté à la suite
+                    d'une modification du DOM (Document Object Model) par du JavaScript côté client. Le serveur n'est
+                    jamais impliqué dans l'attaque.</p>
+                <h3>🎯 Caractéristiques uniques :</h3>
+                <ul>
+                    <li><strong>Côté client uniquement</strong> : La vulnérabilité est dans le JavaScript, pas le
+                        serveur</li>
+                    <li><strong>Pas de requête HTTP</strong> : Le payload n'est jamais envoyé au serveur</li>
+                    <li><strong>Fragment d'URL (#)</strong> : Souvent exploité via le hash de l'URL</li>
+                    <li><strong>Plus difficile à détecter</strong> : Les WAF ne voient pas le payload</li>
+                </ul>
+                <h3>💡 Exemple d'attaque :</h3>
+                <div class="code-block">
+                    # URL malveillante
+                    https://site.com/welcome.html#&lt;script&gt;alert('XSS')&lt;/script&gt;
+
+                    # Code JavaScript vulnérable
+                    var name = location.hash.substring(1);
+                    document.getElementById('welcome').innerHTML =
+                    "Bienvenue " + name;
+
+                    # Le fragment (#...) n'est jamais envoyé au serveur
+                    # Mais le JS client l'utilise directement dans innerHTML
+                    # → XSS exécuté sans que le serveur le sache !
+                </div>
+            </div>
+
+            <!-- Démonstration côte à côte -->
+            <div class="demo-container">
+                <!-- VERSION VULNÉRABLE -->
+                <div class="vulnerable-section">
+                    <h3 class="section-title">🔓 Page Vulnérable</h3>
+                    <p><strong>Testez avec ces URLs :</strong></p>
+                    <div class="code-block" style="font-size: 0.75rem;">
+                        #&lt;img src=x onerror="alert('XSS DOM!')"&gt;
+                        #&lt;script&gt;alert('Hack!')&lt;/script&gt;
+                        #&lt;svg onload="alert('XSS')"&gt;
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vuln-url">Simuler une URL :</label>
+                        <input type="text" id="vuln-url" placeholder="#Votre_Nom" value="#Utilisateur">
+                    </div>
+                    <button onclick="loadVulnerablePage()" class="btn">Charger la page</button>
+
+                    <div id="vulnerableDisplay"
+                        style="margin-top: 20px; padding: 20px; background: white; border-radius: 8px; min-height: 100px;">
+                        <p style="color: #64748b; font-style: italic;">Cliquez sur "Charger la page" pour voir le
+                            résultat</p>
+                    </div>
+
+                    <div class="explanation" style="margin-top: 20px; background: white;">
+                        <h4>⚠️ Code vulnérable :</h4>
+                        <div class="code-block">
+                            // ❌ VULNÉRABLE - Sources DOM non validées
+                            // Récupération directe du hash
+                            var userInput = window.location.hash.substring(1);
+
+                            // OU du query string
+                            var name = new URLSearchParams(
+                            window.location.search
+                            ).get('name');
+
+                            // Injection directe dans le DOM
+                            document.getElementById('div').innerHTML =
+                            "Bonjour " + userInput;
+
+                            // ❌ Autres sources dangereuses :
+                            // - document.URL
+                            // - document.documentURI
+                            // - document.referrer
+                            // - window.name
+                        </div>
+                        <p><strong>Sources DOM dangereuses :</strong> location.hash, location.search, document.referrer,
+                            window.name</p>
+                    </div>
+                </div>
+
+                <!-- VERSION SÉCURISÉE -->
+                <div class="secure-section">
+                    <h3 class="section-title">✅ Page Sécurisée</h3>
+                    <p><strong>Les mêmes payloads seront neutralisés :</strong></p>
+
+                    <div class="form-group">
+                        <label for="secure-url">Simuler une URL :</label>
+                        <input type="text" id="secure-url" placeholder="#Votre_Nom" value="#Utilisateur">
+                    </div>
+                    <button onclick="loadSecurePage()" class="btn">Charger la page</button>
+
+                    <div id="secureDisplay"
+                        style="margin-top: 20px; padding: 20px; background: white; border-radius: 8px; min-height: 100px;">
+                        <p style="color: #64748b; font-style: italic;">Cliquez sur "Charger la page" pour voir le
+                            résultat</p>
+                    </div>
+
+                    <div class="explanation" style="margin-top: 20px; background: white;">
+                        <h4>✅ Code sécurisé :</h4>
+                        <div class="code-block">
+                            // ✅ SÉCURISÉ - Validation + textContent
+                            var userInput = window.location.hash.substring(1);
+
+                            // Validation stricte
+                            if (!/^[a-zA-Z0-9\s]+$/.test(userInput)) {
+                            userInput = "Invité";
+                            }
+
+                            // Utiliser textContent au lieu de innerHTML
+                            document.getElementById('div').textContent =
+                            "Bonjour " + userInput;
+
+                            // OU créer des éléments DOM
+                            var text = document.createTextNode(
+                            "Bonjour " + userInput
+                            );
+                            div.appendChild(text);
+                        </div>
+                        <p><strong>Protections :</strong></p>
+                        <ul>
+                            <li>✅ Validation des entrées DOM (whitelist)</li>
+                            <li>✅ textContent au lieu de innerHTML</li>
+                            <li>✅ Encodage contextuel des données</li>
+                            <li>✅ Éviter eval(), setTimeout(string), Function()</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sources et Sinks -->
+            <div class="explanation">
+                <h3>🔍 Sources et Sinks DOM dangereux :</h3>
+
+                <h4>Sources (Origines des données) :</h4>
+                <div class="code-block">
+                    // Sources contrôlées par l'attaquant
+                    location.hash // #payload
+                    location.search // ?payload
+                    location.href // URL complète
+                    document.URL // URL du document
+                    document.documentURI // URI du document
+                    document.referrer // Page précédente
+                    window.name // Nom de la fenêtre
+                    postMessage() // Messages entre fenêtres
+                </div>
+
+                <h4>Sinks (Destinations dangereuses) :</h4>
+                <div class="code-block">
+                    // ❌ Exécution de code
+                    eval(userInput)
+                    setTimeout(userInput, 100)
+                    setInterval(userInput, 100)
+                    Function(userInput)()
+                    new Function(userInput)()
+
+                    // ❌ Modification DOM dangereuse
+                    element.innerHTML = userInput
+                    element.outerHTML = userInput
+                    document.write(userInput)
+                    document.writeln(userInput)
+
+                    // ❌ Navigation dangereuse
+                    location = userInput
+                    location.href = userInput
+                    location.assign(userInput)
+                </div>
+            </div>
+
+            <!-- Exemples réels -->
+            <div class="explanation">
+                <h3>⚔️ Scénarios d'attaque DOM XSS :</h3>
+
+                <h4>1. Redirection dynamique vulnérable</h4>
+                <div class="code-block">
+                    // ❌ Code vulnérable
+                    var redirect = new URLSearchParams(location.search).get('next');
+                    window.location = redirect;
+
+                    // 🎯 Attaque
+                    https://site.com/?next=javascript:alert('XSS')
+                </div>
+
+                <h4>2. Création dynamique de contenu</h4>
+                <div class="code-block">
+                    // ❌ Code vulnérable
+                    var lang = location.hash.substring(1);
+                    document.write("&lt;script src='/js/" + lang + ".js'&gt;&lt;/script&gt;");
+
+                    // 🎯 Attaque
+                    https://site.com/#'&gt;&lt;script&gt;alert('XSS')&lt;/script&gt;
+                </div>
+
+                <h4>3. jQuery DOMXSS</h4>
+                <div class="code-block">
+                    // ❌ Code vulnérable
+                    var username = location.hash.substring(1);
+                    $('#welcome').html('Bienvenue ' + username);
+
+                    // 🎯 Attaque
+                    https://site.com/#&lt;img src=x onerror=alert('XSS')&gt;
+                </div>
+            </div>
+
+            <!-- Bonnes pratiques -->
+            <div class="explanation">
+                <h3>🛡️ Défenses contre DOM XSS :</h3>
+
+                <h4>1. Éviter les Sinks dangereux</h4>
+                <ul>
+                    <li>✅ <strong>Préférer textContent</strong> à innerHTML</li>
+                    <li>✅ <strong>Créer des éléments DOM</strong> : createElement(), createTextNode()</li>
+                    <li>✅ <strong>Éviter eval()</strong> et setTimeout(string)</li>
+                    <li>✅ <strong>Utiliser setAttribute()</strong> pour les attributs</li>
+                </ul>
+
+                <h4>2. Valider et encoder les Sources</h4>
+                <ul>
+                    <li>✅ <strong>Whitelist stricte</strong> : /^[a-zA-Z0-9]+$/</li>
+                    <li>✅ <strong>Encodage contextuel</strong> : HTML, JavaScript, URL</li>
+                    <li>✅ <strong>Bibliothèques</strong> : DOMPurify pour sanitization</li>
+                </ul>
+
+                <h4>3. Content Security Policy (CSP)</h4>
+                <div class="code-block">
+                    Content-Security-Policy:
+                    default-src 'self';
+                    script-src 'self';
+                    object-src 'none'
+                </div>
+
+                <h4>4. Outils de détection</h4>
+                <ul>
+                    <li>✅ <strong>DOM Invader</strong> (Burp Suite extension)</li>
+                    <li>✅ <strong>eslint-plugin-no-unsanitized</strong></li>
+                    <li>✅ <strong>Analyse statique du code</strong> (SAST tools)</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>💡 TP Cybersécurité - XSS DOM-based</p>
+        </footer>
+    </div>
+
+    <script>
+        // ==================== VERSION VULNÉRABLE ====================
+        function loadVulnerablePage() {
+            const urlInput = document.getElementById('vuln-url').value;
+            const displayDiv = document.getElementById('vulnerableDisplay');
+
+            // Simuler l'extraction du hash de l'URL
+            let userInput = urlInput.startsWith('#') ? urlInput.substring(1) : urlInput;
+
+            // Décodage URL (comme le ferait le navigateur)
+            userInput = decodeURIComponent(userInput);
+
+            // ⚠️ VULNÉRABLE : innerHTML avec données non validées
+            displayDiv.innerHTML = `
+                <h3>👋 Page de bienvenue</h3>
+                <p style="font-size: 1.2rem;">Bonjour <strong>${userInput}</strong> !</p>
+                <p style="color: #64748b;">Merci de visiter notre site.</p>
+            `;
+
+            // Détection XSS
+            if (containsXSS(userInput)) {
+                setTimeout(() => {
+                    displayDiv.innerHTML += `
+                        <div class="message message-error" style="margin-top: 15px;">
+                            🚨 <strong>DOM XSS EXÉCUTÉ !</strong><br>
+                            Caractéristiques de cette attaque :
+                            <ul style="margin-left: 20px; margin-top: 10px;">
+                                <li>✅ Le payload n'a jamais été envoyé au serveur</li>
+                                <li>✅ Fragment (#) de l'URL jamais dans les logs</li>
+                                <li>✅ Impossible à détecter par un WAF</li>
+                                <li>✅ Vulnérabilité purement côté client</li>
+                            </ul>
+                        </div>
+                    `;
+                }, 100);
+            }
+        }
+
+        // ==================== VERSION SÉCURISÉE ====================
+        function loadSecurePage() {
+            const urlInput = document.getElementById('secure-url').value;
+            const displayDiv = document.getElementById('secureDisplay');
+
+            // Simuler l'extraction du hash de l'URL
+            let userInput = urlInput.startsWith('#') ? urlInput.substring(1) : urlInput;
+            userInput = decodeURIComponent(userInput);
+
+            // ✅ VALIDATION STRICTE
+            const isXSS = containsXSS(userInput);
+
+            // Validation alphanumérique + espaces uniquement
+            if (!/^[a-zA-Z0-9\s]+$/.test(userInput)) {
+                userInput = "Invité";
+            }
+
+            // Limitation de longueur
+            if (userInput.length > 50) {
+                userInput = userInput.substring(0, 50);
+            }
+
+            // ✅ SÉCURISÉ : Création d'éléments DOM avec textContent
+            displayDiv.innerHTML = ''; // Vider d'abord
+
+            const title = document.createElement('h3');
+            title.textContent = '👋 Page de bienvenue';
+
+            const welcomeP = document.createElement('p');
+            welcomeP.style.fontSize = '1.2rem';
+            welcomeP.textContent = 'Bonjour ';
+
+            const nameSpan = document.createElement('strong');
+            nameSpan.textContent = userInput; // ✅ textContent échappe automatiquement
+
+            welcomeP.appendChild(nameSpan);
+            welcomeP.appendChild(document.createTextNode(' !'));
+
+            const thanksP = document.createElement('p');
+            thanksP.style.color = '#64748b';
+            thanksP.textContent = 'Merci de visiter notre site.';
+
+            displayDiv.appendChild(title);
+            displayDiv.appendChild(welcomeP);
+            displayDiv.appendChild(thanksP);
+
+            // Message si XSS détecté et neutralisé
+            if (isXSS) {
+                const warningDiv = document.createElement('div');
+                warningDiv.className = 'message message-success';
+                warningDiv.style.marginTop = '15px';
+                warningDiv.innerHTML = `
+                    🛡️ <strong>TENTATIVE DOM XSS BLOQUÉE !</strong><br>
+                    Protections appliquées :
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>✅ Validation stricte (alphanumérique uniquement)</li>
+                        <li>✅ Utilisation de textContent (pas innerHTML)</li>
+                        <li>✅ Création sécurisée d'éléments DOM</li>
+                        <li>✅ Limitation de longueur</li>
+                    </ul>
+                `;
+                displayDiv.appendChild(warningDiv);
+            }
+        }
+
+        // ==================== FONCTIONS UTILITAIRES ====================
+        function containsXSS(text) {
+            const xssPatterns = [
+                /<script/i,
+                /<\/script/i,
+                /javascript:/i,
+                /onerror=/i,
+                /onload=/i,
+                /onclick=/i,
+                /onmouseover=/i,
+                /<iframe/i,
+                /<img/i,
+                /<svg/i,
+                /<object/i,
+                /<embed/i,
+                /<style/i,
+                /<link/i
+            ];
+
+            return xssPatterns.some(pattern => pattern.test(text));
+        }
+
+        // Auto-chargement si hash présent (simulation)
+        window.addEventListener('DOMContentLoaded', function () {
+            if (window.location.hash) {
+                document.getElementById('vuln-url').value = window.location.hash;
+                document.getElementById('secure-url').value = window.location.hash;
+            }
+        });
+    </script>
+</body>
+
+</html>

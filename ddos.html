@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attaque DDoS - TP Cybersécurité</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- En-tête -->
+        <header class="header">
+            <h1>📊 Attaque DDoS</h1>
+            <p class="subtitle">Déni de Service Distribué (Distributed Denial of Service)</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav">
+            <a href="index.html">🏠 Accueil</a>
+            <a href="sql-injection.html">💉 SQL Injection</a>
+            <a href="xss-reflected.html">🔄 XSS Réfléchi</a>
+            <a href="xss-stored.html">💾 XSS Stocké</a>
+            <a href="xss-dom.html">🌐 XSS DOM</a>
+            <a href="ddos.html" class="active">📊 DDoS</a>
+            <a href="inference.html">🔍 Inférence</a>
+        </nav>
+
+        <!-- Contenu principal -->
+        <section class="content-section">
+            <h2>Qu'est-ce qu'une attaque DDoS ?</h2>
+            <div class="explanation">
+                <p><strong>Le DDoS (Distributed Denial of Service)</strong> est une attaque visant à rendre un service
+                    indisponible en le saturant avec un volume massif de requêtes provenant de multiples sources
+                    distribuées (botnet).</p>
+                <h3>🎯 Objectifs d'une attaque DDoS :</h3>
+                <ul>
+                    <li><strong>Saturation de bande passante</strong> : Épuiser la capacité réseau</li>
+                    <li><strong>Épuisement des ressources</strong> : CPU, RAM, connexions simultanées</li>
+                    <li><strong>Perturbation de service</strong> : Rendre le site/service inaccessible</li>
+                    <li><strong>Extorsion</strong> : Demander une rançon pour arrêter l'attaque</li>
+                    <li><strong>Distraction</strong> : Couvrir une autre attaque plus ciblée</li>
+                </ul>
+                <h3>💡 Différence DoS vs DDoS :</h3>
+                <div class="code-block">
+                    DoS (Denial of Service)
+                    └─ 1 seule source d'attaque
+                    └─ Plus facile à bloquer (bloquer 1 IP)
+
+                    DDoS (Distributed Denial of Service)
+                    └─ Milliers/millions de sources (botnet)
+                    └─ Très difficile à bloquer (IPs légitimes infectées)
+                    └─ Volume beaucoup plus important
+                </div>
+            </div>
+
+            <!-- Simulation interactive -->
+            <div class="attack-demo">
+                <h3 style="margin-bottom: 15px;">🎮 Simulation d'attaque DDoS</h3>
+                <p>Cette simulation montre comment un serveur réagit face à différents volumes de trafic.</p>
+
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-value" id="requestCount">0</div>
+                        <div class="stat-label">Requêtes/sec</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="serverLoad">0%</div>
+                        <div class="stat-label">Charge serveur</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="responseTime">50ms</div>
+                        <div class="stat-label">Temps réponse</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="serverStatus" style="color: #16a34a;">🟢 ACTIF</div>
+                        <div class="stat-label">État serveur</div>
+                    </div>
+                </div>
+
+                <div style="margin: 20px 0;">
+                    <button onclick="simulateNormalTraffic()" class="btn">🚶 Trafic Normal (10 req/s)</button>
+                    <button onclick="simulateHighTraffic()" class="btn" style="background: #f59e0b;">⚠️ Trafic Élevé
+                        (100 req/s)</button>
+                    <button onclick="simulateDDoS()" class="btn btn-danger">🚨 Attaque DDoS (1000+ req/s)</button>
+                    <button onclick="stopAttack()" class="btn btn-secondary">⏹️ Arrêter</button>
+                </div>
+
+                <div class="attack-log" id="attackLog">
+                    <div>[SERVEUR] En attente de connexions...</div>
+                </div>
+            </div>
+
+            <!-- Types d'attaques DDoS -->
+            <div class="explanation">
+                <h3>⚔️ Types d'attaques DDoS :</h3>
+
+                <h4>1. Attaques Volumétriques (Volume-based)</h4>
+                <p>Saturation de la bande passante avec un énorme volume de trafic.</p>
+                <div class="code-block">
+                    • UDP Flood : Inondation de paquets UDP
+                    • ICMP Flood (Ping Flood) : Envoi massif de ping
+                    • DNS Amplification : Exploitation de serveurs DNS
+                    → Requête : 60 bytes
+                    → Réponse : 3000+ bytes (amplification x50)
+                    • NTP Amplification : Exploitation de serveurs NTP
+                </div>
+
+                <h4>2. Attaques Protocolaires (Protocol-based)</h4>
+                <p>Exploitation des faiblesses des protocoles réseau (couches 3 et 4).</p>
+                <div class="code-block">
+                    • SYN Flood : Envoi massif de SYN sans ACK
+                    → Épuise la table de connexions TCP
+                    • Ping of Death : Paquets ICMP surdimensionnés
+                    • Smurf Attack : ICMP broadcast amplification
+                    • Fragmentation Attack : Paquets fragmentés malformés
+                </div>
+
+                <h4>3. Attaques Applicatives (Application Layer - L7)</h4>
+                <p>Ciblent l'application web elle-même (couche 7 OSI).</p>
+                <div class="code-block">
+                    • HTTP Flood : Requêtes HTTP GET/POST massives
+                    → Semblent légitimes, difficiles à bloquer
+                    • Slowloris : Maintient connexions ouvertes longtemps
+                    • Slow POST : Envoi très lent de données POST
+                    • Cache-busting : Requêtes vers pages non cachées
+                    • XML-RPC Pingback : Exploitation de WordPress
+                </div>
+            </div>
+
+            <!-- Démonstration protections -->
+            <div class="demo-container">
+                <!-- SERVEUR VULNÉRABLE -->
+                <div class="vulnerable-section">
+                    <h3 class="section-title">🔓 Serveur Sans Protection</h3>
+
+                    <div class="explanation" style="background: white;">
+                        <h4>⚠️ Vulnérabilités :</h4>
+                        <ul>
+                            <li>❌ Aucune limitation de débit (rate limiting)</li>
+                            <li>❌ Pas de filtrage d'IP</li>
+                            <li>❌ Timeout serveur par défaut (long)</li>
+                            <li>❌ Pas de mise en cache</li>
+                            <li>❌ Traitement de toutes les requêtes</li>
+                        </ul>
+                        <div class="code-block">
+                            // ❌ Code vulnérable
+                            app.get('/api/data', (req, res) => {
+                            // Pas de rate limiting
+                            // Requête lourde en BDD
+                            db.query('SELECT * FROM huge_table');
+                            res.send(data);
+                            });
+                            // → Peut être surchargé facilement
+                        </div>
+                    </div>
+
+                    <div class="message message-error">
+                        <strong>Impact d'une attaque :</strong><br>
+                        • Serveur indisponible en 30 secondes<br>
+                        • Tous les utilisateurs affectés<br>
+                        • Perte de revenus<br>
+                        • Dommage à la réputation
+                    </div>
+                </div>
+
+                <!-- SERVEUR PROTÉGÉ -->
+                <div class="secure-section">
+                    <h3 class="section-title">✅ Serveur Protégé</h3>
+
+                    <div class="explanation" style="background: white;">
+                        <h4>✅ Protections actives :</h4>
+                        <ul>
+                            <li>✅ <strong>Rate Limiting</strong> : Max 100 req/min par IP</li>
+                            <li>✅ <strong>WAF</strong> : Filtrage du trafic malveillant</li>
+                            <li>✅ <strong>CDN</strong> : Distribution géographique</li>
+                            <li>✅ <strong>Load Balancing</strong> : Répartition de charge</li>
+                            <li>✅ <strong>Auto-scaling</strong> : Ressources dynamiques</li>
+                            <li>✅ <strong>Captcha</strong> : Validation humaine sous attaque</li>
+                        </ul>
+                        <div class="code-block">
+                            // ✅ Code protégé
+                            const rateLimit = require('express-rate-limit');
+
+                            const limiter = rateLimit({
+                            windowMs: 60 * 1000, // 1 minute
+                            max: 100, // 100 requêtes max
+                            message: 'Trop de requêtes'
+                            });
+
+                            app.use('/api/', limiter);
+
+                            // Mise en cache
+                            app.use(cache('5 minutes'));
+
+                            // Timeout
+                            app.use(timeout('10s'));
+                        </div>
+                    </div>
+
+                    <div class="message message-success">
+                        <strong>Résistance à l'attaque :</strong><br>
+                        • Trafic légitime maintenu<br>
+                        • IPs malveillantes bloquées<br>
+                        • Service disponible 99.9%<br>
+                        • Détection et mitigation automatique
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botnet et attaques réelles -->
+            <div class="explanation">
+                <h3>🤖 Botnets et attaques DDoS réelles :</h3>
+
+                <h4>Qu'est-ce qu'un Botnet ?</h4>
+                <p>Réseau d'ordinateurs/objets IoT infectés contrôlés à distance pour lancer des attaques coordonnées.
+                </p>
+                <div class="code-block">
+                    Botnet Mirai (2016)
+                    ├─ 600,000 dispositifs IoT infectés
+                    ├─ Attaque de 1.2 Tbps contre OVH
+                    ├─ DNS provider Dyn rendu indisponible
+                    └─ Impact : Twitter, Netflix, Reddit, GitHub inaccessibles
+
+                    Botnet Memcached (2018)
+                    ├─ 1.7 Tbps contre GitHub
+                    ├─ Amplification x51,000
+                    └─ Mitigation en ~10 minutes (CDN Akamai)
+                </div>
+
+                <h4>Motivations des attaques DDoS :</h4>
+                <ul>
+                    <li><strong>Extorsion</strong> : Rançon pour arrêter l'attaque (DDoS-for-ransom)</li>
+                    <li><strong>Concurrence déloyale</strong> : Saboter un concurrent</li>
+                    <li><strong>Hacktivisme</strong> : Protestation politique (Anonymous)</li>
+                    <li><strong>Représailles</strong> : Vengeance personnelle</li>
+                    <li><strong>Diversion</strong> : Cacher une intrusion/vol de données</li>
+                </ul>
+            </div>
+
+            <!-- Défenses -->
+            <div class="explanation">
+                <h3>🛡️ Stratégies de défense contre DDoS :</h3>
+
+                <h4>Niveau Infrastructure :</h4>
+                <ul>
+                    <li><strong>CDN (Cloudflare, Akamai)</strong> : Absorption du trafic distribué</li>
+                    <li><strong>Anti-DDoS spécialisés</strong> : Arbor Networks, Radware</li>
+                    <li><strong>Over-provisioning</strong> : Bande passante excédentaire</li>
+                    <li><strong>Anycast routing</strong> : Distribution géographique du trafic</li>
+                </ul>
+
+                <h4>Niveau Applicatif :</h4>
+                <ul>
+                    <li><strong>Rate Limiting</strong> : Limitation par IP/session (nginx, express-rate-limit)</li>
+                    <li><strong>WAF (Web Application Firewall)</strong> : Filtrage intelligent</li>
+                    <li><strong>Captcha Challenge</strong> : Vérification humaine (hCaptcha, reCAPTCHA)</li>
+                    <li><strong>Connection Limiting</strong> : Max connexions simultanées par IP</li>
+                    <li><strong>Caching agressif</strong> : Varnish, Redis</li>
+                </ul>
+
+                <h4>Détection et Monitoring :</h4>
+                <ul>
+                    <li><strong>Baseline de trafic</strong> : Connaître le trafic normal</li>
+                    <li><strong>Alertes anomalies</strong> : Détection de pics suspects</li>
+                    <li><strong>Analyse de patterns</strong> : User-Agent, géolocalisation</li>
+                    <li><strong>Honeypots</strong> : Leurres pour identifier attaquants</li>
+                </ul>
+
+                <h4>Plan de réponse incident :</h4>
+                <ul>
+                    <li><strong>Playbook DDoS</strong> : Procédure documentée</li>
+                    <li><strong>Contact ISP</strong> : Coordination avec fournisseur internet</li>
+                    <li><strong>Null routing</strong> : Blackhole du trafic malveillant</li>
+                    <li><strong>Communication</strong> : Informer utilisateurs et partenaires</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>💡 TP Cybersécurité - Attaque DDoS</p>
+        </footer>
+    </div>
+
+    <script>
+        let attackInterval = null;
+        let requestsPerSecond = 0;
+        let serverLoad = 0;
+        let logCount = 0;
+
+        function addLog(message, type = 'info') {
+            const logDiv = document.getElementById('attackLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : '#10b981';
+
+            logCount++;
+            if (logCount > 20) {
+                // Garder seulement les 20 derniers logs
+                const logs = logDiv.children;
+                if (logs.length > 20) {
+                    logDiv.removeChild(logs[0]);
+                }
+            }
+
+            const logEntry = document.createElement('div');
+            logEntry.style.color = color;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStats() {
+            document.getElementById('requestCount').textContent = requestsPerSecond;
+            document.getElementById('serverLoad').textContent = serverLoad + '%';
+
+            // Calcul du temps de réponse basé sur la charge
+            const responseTime = Math.min(50 + (serverLoad * 10), 5000);
+            document.getElementById('responseTime').textContent = responseTime > 1000 ?
+                (responseTime / 1000).toFixed(1) + 's' : responseTime + 'ms';
+
+            // État du serveur
+            const statusDiv = document.getElementById('serverStatus');
+            if (serverLoad < 70) {
+                statusDiv.textContent = '🟢 ACTIF';
+                statusDiv.style.color = '#16a34a';
+            } else if (serverLoad < 90) {
+                statusDiv.textContent = '🟡 SURCHARGÉ';
+                statusDiv.style.color = '#f59e0b';
+            } else {
+                statusDiv.textContent = '🔴 HORS SERVICE';
+                statusDiv.style.color = '#dc2626';
+            }
+        }
+
+        function simulateNormalTraffic() {
+            stopAttack();
+            requestsPerSecond = 10;
+            serverLoad = 15;
+
+            addLog('Trafic normal détecté : ~10 requêtes/seconde');
+            addLog('Serveur : Charge normale, tout va bien', 'info');
+
+            attackInterval = setInterval(() => {
+                addLog(`${Math.floor(Math.random() * 5) + 8} utilisateurs connectés`);
+                updateStats();
+            }, 2000);
+
+            updateStats();
+        }
+
+        function simulateHighTraffic() {
+            stopAttack();
+            requestsPerSecond = 100;
+            serverLoad = 65;
+
+            addLog('⚠️ ALERTE : Trafic élevé détecté', 'warning');
+            addLog('100 requêtes/seconde - Serveur sous pression', 'warning');
+
+            let count = 0;
+            attackInterval = setInterval(() => {
+                count++;
+                if (count % 2 === 0) {
+                    addLog(`Charge CPU : ${serverLoad}% - Mémoire : 75%`, 'warning');
+                }
+                addLog(`${Math.floor(Math.random() * 30) + 85} connexions simultanées`, 'warning');
+                updateStats();
+            }, 1500);
+
+            updateStats();
+        }
+
+        function simulateDDoS() {
+            stopAttack();
+            requestsPerSecond = 1000;
+            serverLoad = 30;
+
+            addLog('🚨 ATTAQUE DDoS DÉTECTÉE !', 'error');
+            addLog('Source : Botnet distribué (10,000+ IPs)', 'error');
+
+            let phase = 0;
+            attackInterval = setInterval(() => {
+                phase++;
+                requestsPerSecond = Math.floor(1000 + Math.random() * 5000);
+                serverLoad = Math.min(serverLoad + 5, 100);
+
+                const attackTypes = [
+                    'HTTP Flood depuis 213.45.67.89',
+                    'SYN Flood détecté depuis 104.28.53.12',
+                    'UDP Flood - 50,000 paquets/sec',
+                    'Slowloris attack en cours',
+                    'DNS Amplification détectée',
+                    'POST Flood vers /api/search'
+                ];
+
+                addLog(attackTypes[Math.floor(Math.random() * attackTypes.length)], 'error');
+
+                if (serverLoad >= 90) {
+                    addLog('🔴 SERVEUR SURCHARGÉ - Connexions refusées', 'error');
+                }
+
+                if (phase === 3) {
+                    addLog('Tentative de mitigation...', 'warning');
+                }
+
+                if (phase === 5) {
+                    addLog('❌ Mitigation échouée - Serveur inaccessible', 'error');
+                }
+
+                updateStats();
+            }, 800);
+
+            updateStats();
+        }
+
+        function stopAttack() {
+            if (attackInterval) {
+                clearInterval(attackInterval);
+                attackInterval = null;
+            }
+
+            requestsPerSecond = 0;
+            serverLoad = 0;
+
+            addLog('Attaque arrêtée - Serveur en récupération', 'info');
+            updateStats();
+        }
+
+        // Initialisation
+        updateStats();
+    </script>
+</body>
+
+</html>

